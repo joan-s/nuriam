@@ -1,0 +1,74 @@
+Se m'ha oblidat de comentar que tal com hem parlat les labels estan molt desproporcionades:
+label 0 : ~6%  (el fluid està en procés de transformació liquid-gas)
+label 1: ~87% (el fluid està en estat liquid)
+label 2: ~6%   (el fluid està en estat gasós)
+
+Aviam com va!
+Fins aviat,
+Núria
+
+Missatge de Nuria Masclans Serrat <nuria.masclans@upc.edu> del dia dc., 17 d’ag. 2022 a les 16:06:
+
+    Hola Joan,
+    Estic penjant els snapshots al transfer.sh, però triguen molt a pujar-se. De moment n'hi ha 4 
+    de pujats:
+    - Snapshot 1: https://transfer.sh/JoqnDD/dataset_snapshot_1.npz
+    - Snapshot 2: https://transfer.sh/F37c1m/dataset_snapshot_2.npz
+    - Snapshot 3: https://transfer.sh/15nMun/dataset_snapshot_3.npz
+    - Snapshot 4: https://transfer.sh/rVCghW/dataset_snapshot_4.npz
+    Quan s'hagin pujat tots els snapshots et respondré aquest mail amb els links que falten, 
+    però trigarà unes hores.
+
+    Els datasets .npz tenen dues arrays:
+    - x : array de features, amb shape [128, 110, 128,15] = [n_nodes_z, n_nodes_y, n_nodes_x, 
+    n_features]
+    - y : array de labels, amb shape [128, 110, 128]
+
+    La simulació és un fluid que circula per un canal entre dues parets (a y=0 i a y=y_maxima). 
+    El fluid es mou majoritàriament en la direcció x, on x_maxima dóna la longitud del canal. 
+    La coordenada z té propietats de simetria, és a dir que el fluid que s' "escapa" per 
+    z = z_maxima, "retorna" dins el canal per z = 0.
+
+    Les dades de 'x' són les 15 features en cadascun dels nodes d'una grid de 128 x 110 x 128. 
+    Com pots observar, la xarxa de nodes té 128 nodes en els eixos z i x, pero només 110 nodes 
+    en l'eix y. Això és perquè he eliminat del dataset els plans x-z prop de les parets del canal 
+    per on circula el fluid (y petites i y grans, m'he quedat amb l' "interior" del canal, amb 
+    els plans x-z que es troben relativament lluny de les parets).
+
+    Tinc 15 features:
+    #1 : u  : velocitat total del fluid en la coordenada x
+    #2 : v  : velocitat total del fluid en la coordenada y
+    #3 : w : velocitat total del fluid en la coordenada z
+    #4 : y_plus : coordenada y en 'coordenades de paret', ve a ser la coordenada y amb una 
+    transformació que dóna informació de la influencia que la paret exerceix sobre el moviment 
+    del fluid
+    #5: TKE_normalized : Turbulent Kinetic Energy, l'energia del moviment turbulent
+    #6, #7, #8, #9, #10: P_A, Q_A, Q_S, R_A, R_S : diversos invariants de la matriu del gradient 
+    de velocitat total
+    ** matriu A és gradient de velocitats: Aij = du_i/dx_j : és una matriu 3x3 on 
+       A[0,0] = du/dx, A[0,1] = du/dy, A[0,2] = du/dz, A[1,0] = dv/dx ....
+    ** matriu S és la part simètrica de A: Sij = 1/2 * (du_i/dx_j + du_j/dx_i) : és una matriu 
+       3x3 on e.g. S[0,1] = 1/2 * (du/dy + dv/dx)
+    ** invariant P és el 1r invariant d'una matriu quadrada M :  P(M) = -Tr(M)
+    ** invariant Q és el 2n invariant d'una matriu quadrada M : Q(M) = 1/2 * ( (Tr(M))^2 - Tr(M^2) )
+    ** invariant R és el 3r invariant d'una matriu quadrada M :  R(M) = det(M)
+       -> aleshores, P_A = P(A) el 1r invariant de la matriu A, Q_A = Q(A) el 2n invariant de A, 
+       Q_S = Q(S) 2n inv de S, etc.
+    #11, #12, #13, #14, #15 : rmsf_P_A, rmsf_Q_A, rmsf_Q_S, rmsf_R_A, rmsf_R_S
+    ** és el mateix que els anteriors invariants, però en comptes d'usar les velocitats totals 
+       per calcular els gradients (u,v,w) uso les velocitats de les fluctuacions (concretament 
+       el root mean square de la velocitat de fluctuacio (rmsf)). La velocitat de fluctuació és 
+       la velocitat total del fluid en un node en un instant concret, menys la velocitat mitjana 
+       al llarg del temps del fluid en aquest node (si la velocitat fós constant, la velocitat 
+       de fluctuació seria 0). La velocitat mitjana al llarg del temps és calcula al llarg de 
+       la simulació, en un determinat snapshot és la mitjana al llarg de tots els instants de 
+       temps anteriors.
+
+    ** Es dóna tanta importància als invariants perquè s'ha trobat que donen informació de com 
+    és mou el fluid, dels patrons de moviments. És a dir, segons les relacions entre els 
+    diferents invariants es pot deduir si el fluid s'està comprimint, contraient, fent 
+    una rotació,... i així poder entendre d'una manera més qualitativa com es comporta el fluid.
+
+    Espero haver sigut clara, moltes gràcies Joan m'estàs obrint moltes portes!
+    Em vaig mirant les altres cosetes que m'has passat:)
+    Moltíssimes gràcies i bon dia!
