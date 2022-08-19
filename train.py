@@ -115,7 +115,9 @@ net = net_to_device(net)
 #
 device = get_device()
 class_weights = torch.tensor(config['class_weights']).to(device)
-loss_func = torch.nn.CrossEntropyLoss(weight=class_weights)
+label_smoothing = config.get('label_smoothing', 0.0)
+loss_func = torch.nn.CrossEntropyLoss(weight=class_weights,
+                                      label_smoothing=label_smoothing)
 
 #
 # Optimizer
