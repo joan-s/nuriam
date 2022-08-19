@@ -69,8 +69,7 @@ class SnapshotDataset(Dataset):
             self.stride = stride
         
         self.num_snapshots = len(self.snapshots)
-        assert np.all(np.array(self.snapshot_size[:3]) 
-                      - np.array(self.crop_size) >= 0)
+        assert np.all(np.array(self.snapshot_size[:3]) - np.array(self.crop_size) >= 0)
         # make sure we can make a crop
         
         # compute the upper left coordinates of all patches
@@ -111,7 +110,7 @@ class SnapshotDataset(Dataset):
             # keep only the indexed features (last dimension) of the crop
             crop = crop[:, :, :, self.select_features]
 
-        crop = np.swapaxes(crop, 3, 0) # pytorch wants features x height x width x depth
+        crop = np.transpose(crop, [3, 0, 1, 2]) # pytorch wants features x height x width x depth
         return torch.tensor(crop, dtype=torch.float32), \
                torch.tensor(label, dtype=torch.float32)
 
