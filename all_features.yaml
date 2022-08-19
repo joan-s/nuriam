@@ -23,11 +23,11 @@ cuda_visible_devices : '0,1,2,3,4,5,6,7'
 # set to '' if no GPUs (so will use the CPU)
 crop_size : [32, 32, 32]
 stride : [8, 8, 8]
-select_features : [0, 1, 2, 3, 4, 5, 6, 7]
+select_features : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,]
 # multiple of num_groups
 # set to [] for all features
 batch_size : 160
 # if using GPUs, 20 * number of GPUs
-class_weights : [10., 1., 10.]
+class_weights : [1., 0.1, 1.]
 learning_rate : 5e-5
-num_epochs : 60
+num_epochs : 100

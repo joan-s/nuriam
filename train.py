@@ -15,30 +15,27 @@ nvidia-smi again to check is dead, or top or ps -ax
 """
 
 import os
-import numpy as np
-import argparse
 import yaml
+import argparse
+import logging
+from utils import get_logger
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from snapshot_dataset import SnapshotDataset
 from model import UNet3D
-import logging
-from utils import get_logger, RunningAverage
+from utils import RunningAverage
 from sklearn.metrics import jaccard_score
 from sklearn.metrics import confusion_matrix
 
-
-logger = get_logger('train',level=logging.INFO)
-
+                                                                                                                                               
 
 def load_config():
     parser = argparse.ArgumentParser(description='UNet3D for fluid-gas segmentation')
     parser.add_argument('--config', type=str, help='Path to the YAML config file', required=True)
     args = parser.parse_args()
     config = yaml.safe_load(open(args.config, 'r'))
-    config['device'] = get_device()
     return config
-
 
 
 def get_device():
@@ -65,12 +62,16 @@ def net_to_device(net):
     
 
 #
-# Parameters and input data
-#
+# Parameters
+# 
+logger = get_logger('train',level=logging.INFO)
+
 config = load_config()
 logger.info(config)
-os.environ["CUDA_VISIBLE_DEVICES"] = config['cuda_visible_devices']
-
+os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']
+# this must be done before importing cuda-related things, otherwise torch.cuda.device_count()
+# counts all the existing GPUs, not those visible     
+   
     
 #
 # Make datasets of train and validation and corresponding dataloaders
@@ -127,6 +128,7 @@ optimizer = torch.optim.Adam(params=net.parameters(), lr=learning_rate)
 # Train loop
 #
 num_epochs = config['num_epochs']
+devide = get_device()
 for epoch in range(1, num_epochs+1):
     logger.info('Epoch {}'.format(epoch))
     net.train()
