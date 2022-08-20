@@ -69,10 +69,12 @@ for nbatch, (features, labels) in enumerate(test_dataloader):
     out = net(features)
     num_samples = len(features)
     
-    pred = torch.argmax(out, dim=1).to('cpu').numpy().astype(np.uint8)
+    sem_seg = torch.argmax(out, dim=1).to('cpu').numpy().astype(np.uint8)
+    sem_seg = np.squeeze(sem_seg)
+    # remove first dimension of size 1
     np.savez('results/prediction_snapshot_{}_experiment_{}.npz'\
-             .format(nbatch, experiment_id), pred=pred)
-    y_pred = pred.flatten()
+             .format(nbatch, experiment_id), segmentation=sem_seg)
+    y_pred = sem_seg.flatten()
     y_true = labels.long().numpy().flatten()
     cm, per_class_iou, mean_iou, acc, prec, rec = \
         compute_metrics(y_true, y_pred)
