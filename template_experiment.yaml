@@ -33,3 +33,6 @@ label_smoothing : 0.0
 # 0.0 is no label smoothing, see pytorch doc. of cross-entropy loss
 learning_rate : 5e-5
 num_epochs : 60
+save_checkpoint_every_epochs : 0
+# 0 = don't save checkpoints
+first_epoch_to_save_checkpoints : 50

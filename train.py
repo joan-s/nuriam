@@ -20,6 +20,7 @@ import argparse
 import logging
 from utils import get_logger
 import numpy as np
+from datetime import datetime
 import torch
 from torch.utils.data import DataLoader
 from snapshot_dataset import SnapshotDataset
@@ -28,7 +29,8 @@ from utils import RunningAverage
 from sklearn.metrics import jaccard_score
 from sklearn.metrics import confusion_matrix
 
-                                                                                                                                               
+
+logger = get_logger('train',level=logging.INFO)                                                                                                                                               
 
 def load_config():
     parser = argparse.ArgumentParser(description='UNet3D for fluid-gas segmentation')
@@ -61,12 +63,28 @@ def net_to_device(net):
         return net.to(device)
     
 
+def maybe_save_checkpoint(epoch, config, net, optimizer, loss_func):
+    if epoch >= config['first_epoch_to_save_checkpoints'] \
+       and config['save_checkpoint_every_epochs'] > 0 \
+       and (epoch == config['first_epoch_to_save_checkpoints']
+            or epoch % config['save_checkpoint_every_epochs'] == 0) :
+        fname = os.path.join('checkpoints', '{}_epoch_{}.pt'\
+                             .format(config['experiment_id'], epoch))
+        torch.save({'config': config,
+                    'epoch': epoch,
+                    'model_state_dict': net.module.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss_func': loss_func }, fname)
+        logger.info('saved checkpoint to {}'.format(fname))
+    
+
+    
 #
 # Parameters
 # 
-logger = get_logger('train',level=logging.INFO)
-
 config = load_config()
+config['experiment_id'] = str(datetime.now().microsecond)
+# each training experiment has a unique id number to be used to name the checkpoint files
 logger.info(config)
 os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']
 # this must be done before importing cuda-related things, otherwise torch.cuda.device_count()
@@ -148,9 +166,11 @@ for epoch in range(1, num_epochs+1):
         optimizer.step()
         logger.info('batch {}, loss {}'.format(nbatch, loss.item()))
         
-        #if nbatch==5: break
+        #if nbatch==2: break
         # to debug evaluation code below soon
         
+    maybe_save_checkpoint(epoch, config, net, optimizer, loss_func)
+            
     # evaluation on the validation set
     running_avg_confusion_matrix = RunningAverage()
     running_avg_per_class_iou = RunningAverage()

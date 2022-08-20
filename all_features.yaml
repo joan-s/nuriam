@@ -32,3 +32,6 @@ class_weights : [1., 0.1, 1.]
 label_smoothing: 0.0
 learning_rate : 5e-5
 num_epochs : 100
+save_checkpoint_every_epochs : 0
+# 0 = don't savecheckpoints
+first_epoch_to_save_checkpoints : 80

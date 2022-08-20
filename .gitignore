@@ -2,4 +2,5 @@ snapshots/*
 pytorch-3dunet-master/
 *.html
 results/
-
+__pycache__/
+checkpoints/
