@@ -2,7 +2,7 @@ import torch.nn as nn
 
 from buildingblocks import DoubleConv, ExtResNetBlock, create_encoders, \
     create_decoders
-from utils import number_of_features_per_level, get_class
+from utils import number_of_features_per_level
 
 
 class Abstract3DUNet(nn.Module):
@@ -167,6 +167,4 @@ class UNet2D(Abstract3DUNet):
                                      **kwargs)
 
 
-# def get_model(model_config):
-#     model_class = get_class(model_config['name'], modules=['pytorch3dunet.unet3d.model'])
-#     return model_class(**model_config)
+

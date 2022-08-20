@@ -15,8 +15,6 @@ nvidia-smi again to check is dead, or top or ps -ax
 """
 
 import os
-import yaml
-import argparse
 import logging
 from utils import get_logger
 import numpy as np
@@ -25,58 +23,14 @@ import torch
 from torch.utils.data import DataLoader
 from snapshot_dataset import SnapshotDataset
 from model import UNet3D
-from utils import RunningAverage
+from utils import load_config, get_device, net_to_device, \
+    maybe_save_checkpoint, RunningAverage
 from sklearn.metrics import jaccard_score
 from sklearn.metrics import confusion_matrix
 
 
 logger = get_logger('train',level=logging.INFO)                                                                                                                                               
 
-def load_config():
-    parser = argparse.ArgumentParser(description='UNet3D for fluid-gas segmentation')
-    parser.add_argument('--config', type=str, help='Path to the YAML config file', required=True)
-    args = parser.parse_args()
-    config = yaml.safe_load(open(args.config, 'r'))
-    return config
-
-
-def get_device():
-    if torch.cuda.is_available(): # is there any visible GPU ?
-        device = torch.device("cuda:0")
-    else:
-        device = torch.device('cpu')
-    return device
-
-
-def net_to_device(net):  
-    device = get_device()      
-    if torch.cuda.is_available():
-        if torch.cuda.device_count() > 1:
-            net_parallel = torch.nn.DataParallel(net) 
-            logger.info('Using {} GPUs'.format(torch.cuda.device_count()))
-            return net_parallel.to(device)
-        else:
-            logger.info('Using just one GPU')
-            return net.to(device)
-    else:
-        logger.warning('CUDA not available, using CPU !')
-        return net.to(device)
-    
-
-def maybe_save_checkpoint(epoch, config, net, optimizer, loss_func):
-    if epoch >= config['first_epoch_to_save_checkpoints'] \
-       and config['save_checkpoint_every_epochs'] > 0 \
-       and (epoch == config['first_epoch_to_save_checkpoints']
-            or epoch % config['save_checkpoint_every_epochs'] == 0) :
-        fname = os.path.join('checkpoints', '{}_epoch_{}.pt'\
-                             .format(config['experiment_id'], epoch))
-        torch.save({'config': config,
-                    'epoch': epoch,
-                    'model_state_dict': net.module.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss_func': loss_func }, fname)
-        logger.info('saved checkpoint to {}'.format(fname))
-    
 
     
 #
@@ -94,7 +48,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = config['cuda_visible_devices']
 #
 # Make datasets of train and validation and corresponding dataloaders
 # from existing snapshots
-# TODO: make a valitation dataset-dataloader for evaluation during training
 #
 snapshots_train = config['snapshots_train']
 snapshots_test = config['snapshots_test']
@@ -125,7 +78,7 @@ num_groups = config['num_groups']
 net = UNet3D(num_features, num_classes, num_groups=num_groups, final_sigmoid=False)
 # in_channels=num_features must be divisible by num_groups
 logger.debug(net)
-net = net_to_device(net)
+net = net_to_device(net, logger)
 
 
 #
@@ -169,7 +122,7 @@ for epoch in range(1, num_epochs+1):
         #if nbatch==2: break
         # to debug evaluation code below soon
         
-    maybe_save_checkpoint(epoch, config, net, optimizer, loss_func)
+    maybe_save_checkpoint(epoch, config, net, optimizer, loss_func, logger)
             
     # evaluation on the validation set
     running_avg_confusion_matrix = RunningAverage()
@@ -204,7 +157,8 @@ for epoch in range(1, num_epochs+1):
         'mean IoU {}'\
         .format(epoch, conf_mat, accuracy, precision, recall,
                         per_class_iou, mean_iou))
-    
+    #TODO: import functions to compute metrics from metrics.py,
+    # build from test.py and do like in test.py 
     
 
 
