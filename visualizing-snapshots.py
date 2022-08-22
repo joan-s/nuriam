@@ -12,16 +12,42 @@ conda install -c plotly plotly=5.10.0
 import numpy as np
 
 # Import data
-fn = 'snapshots/dataset_snapshot_1.npz'
-f = np.load(fn)
-volume = f['x']
-#label = f['y']
-feature = 4 # TKE_normalized : Turbulent Kinetic Energy
-title = 'Turbulent Kinetic Energy'
-volume = volume[:, :, :, feature] 
-volume = np.swapaxes(volume, 2, 0)
-r, c = volume[0].shape
-nb_frames = len(volume)
+if False:
+    fn = 'snapshots/dataset_snapshot_4.npz'
+    f = np.load(fn)
+    volume = f['x']
+    feature = 4 # TKE_normalized : Turbulent Kinetic Energy
+    title = 'Turbulent Kinetic Energy'
+    html_filename = 'tke_snapshot4.html'
+    #feature = 5 # P_A
+    #title = 'P_A'
+    #feature = 0 # u
+    #title = 'u = vel. x'
+    volume = volume[:, :, :, feature] 
+    volume = np.swapaxes(volume, 2, 0)
+    r, c = volume[0].shape
+    nb_frames = len(volume)
+if False:
+    fn = 'snapshots/dataset_snapshot_4.npz'
+    f = np.load(fn)
+    #volume = f['x']
+    volume = f['y']
+    title = 'groundtruth snapshot 4'
+    html_filename = 'groundtruth_snapshot4.html'
+    volume = np.swapaxes(volume, 2, 0)
+    r, c = volume[0].shape
+    nb_frames = len(volume)
+if True:
+    fn = 'results/prediction_snapshot_0_experiment_968615.npz'
+    f = np.load(fn)
+    volume = f['segmentation']
+    title = 'semantic segmentation'
+    html_filename = 'segmentation_snapshot4.html'
+    volume = np.swapaxes(volume, 2, 0)
+    r, c = volume[0].shape
+    nb_frames = len(volume)
+
+
 
 # Define frames
 import plotly.graph_objects as go
@@ -29,7 +55,7 @@ import plotly.graph_objects as go
 fig = go.Figure(frames=[go.Frame(data=go.Surface(
     z=((nb_frames-1)/10. - k * 0.1) * np.ones((r, c)),
     surfacecolor=np.flipud(volume[nb_frames - k - 1]),
-    cmin=0, cmax=volume.max()
+    cmin=volume.min(), cmax=volume.max()
     ),
     name=str(k) # you need to name the frame for the animation to behave properly
     )
@@ -40,7 +66,7 @@ fig.add_trace(go.Surface(
     z=(nb_frames-1)/10. * np.ones((r, c)),
     surfacecolor=np.flipud(volume[nb_frames - 1]),
     colorscale='Gray',
-    cmin=0, cmax=volume.max(),
+    cmin=volume.min(), cmax=volume.max(),
     colorbar=dict(thickness=20, ticklen=4)
     ))
 
@@ -103,5 +129,5 @@ fig.update_layout(
          sliders=sliders
 )
 
-#fig.show(block=False)
-fig.write_html('vis-snapshot.html', auto_open=True)
+
+fig.write_html(html_filename, auto_open=True)
