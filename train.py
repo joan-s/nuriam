@@ -123,7 +123,15 @@ for epoch in range(1, num_epochs+1):
         # to debug evaluation code below soon
         
     maybe_save_checkpoint(epoch, config, net, optimizer, loss_func, logger)
-            
+
+    # free memory in the GPU so that evaluation can be done on the whole
+    # snapshot, and at the same time we can train with a large batch size
+    # that uses all the GPU memory
+    del features
+    del out
+    del labels
+    torch.cuda.empty_cache()    
+    
     # evaluation on the validation set
     running_avg_confusion_matrix = RunningAverage()
     running_avg_per_class_iou = RunningAverage()
@@ -140,6 +148,12 @@ for epoch in range(1, num_epochs+1):
         jac = jaccard_score(y_true, y_pred, average=None)
         running_avg_per_class_iou.update(jac, num_samples)
     
+
+    del features
+    del out
+    del labels
+    torch.cuda.empty_cache()
+
     per_class_iou = running_avg_per_class_iou.avg
     mean_iou = running_avg_per_class_iou.avg.mean()
     conf_mat = running_avg_confusion_matrix.sum
